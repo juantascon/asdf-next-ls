@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z ${ASDF_INSTALL_TYPE+x} ]] && echo "ASDF_INSTALL_TYPE is required" && exit 1
+[[ -z ${ASDF_INSTALL_VERSION+x} ]] && echo "ASDF_INSTALL_VERSION is required" && exit 1
+[[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
+
+function install() {
+  local install_type=$1
+  local version=$2
+  local install_path=$3
+
+  [ "$install_type" != "version" ] && echo "intall type, $install_type, is not supported" && exit 1
+
+  local platform
+  case "$(uname -s)" in
+    Darwin) platform="darwin" ;;
+    Linux) platform="linux" ;;
+    *) echo "unsupported platform" && exit 1 ;;
+  esac
+
+  local architecture
+  case "$(uname -m)" in
+    aarch64* | arm64) architecture="arm64" ;;
+    x86_64*) architecture="amd64" ;;
+    *) echo "unsupported architecture" && exit 1 ;;
+  esac
+
+  local repo="elixir-tools/next-ls"
+  local download_filename="next_ls_${platform}_${architecture}"
+  local download_url="https://github.com/${repo}/releases/download/v${version}/${download_filename}"
+
+  mkdir -p "${install_path}/bin"
+  echo "Downloading from ${download_url}"
+  curl -fLsS -H "Accept: application/octet-stream" -o "${install_path}/bin/next_ls" "${download_url}"
+  chmod 755 "${install_path}/bin/next_ls"
+}
+
+install "${ASDF_INSTALL_TYPE}" "${ASDF_INSTALL_VERSION}" "${ASDF_INSTALL_PATH}"
